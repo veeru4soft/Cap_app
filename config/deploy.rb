@@ -83,7 +83,7 @@ after "deploy:migrate_db", "deploy:start"
    task :start do 
 	#set :app_port, ask("Port", nil)
 	#execute :bundle, "exec thin start -p #{fetch(:app_port)} -d -e RAILS_ENV=#{fetch(:rails_env)}"
-    run "cd #{deploy_to}/current && exec rails s -p 2003 -d "
+    run "cd #{deploy_to}/current && exec rails s -p 2003 "
    end
    task :stop do ; end
    task :restart, :roles => :app, :except => { :no_release => true } do
