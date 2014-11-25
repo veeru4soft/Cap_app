@@ -7,26 +7,42 @@ set :application, "cap_app"
 set :scm, :git
 set :repository, "https://github.com/veeru4soft/Cap_app.git"
 set :scm_passphrase, ""
-set :user, "nyros" 
-set :password, "12345678"
+set :rails_env, "production"
 
 
-server %w{10.90.90.147 10.90.90.142}, :app, :web, :db, :primary => true
 
-ssh_options[:keys] = [File.join(ENV["HOME"], ".ssh", "public_rsa")]
+
 
 set :stages, ["production", "staging"]
 set :default_stage, "staging"
 
-set :deploy_to, "/home/nyros/cap_app"
+set :deploy_to, "/home/nyros/trails/cap_app"
+set :user, "nyros" 
+set :password, "12345678"
 
 
 set :repository_cache, "git_cache"
 set :deploy_via, :remote_cache
-role :app, %w{10.90.90.147 10.90.90.142}#"10.90.90.109"
-role :web,%w{10.90.90.147 10.90.90.142}
-role :db,  %w{10.90.90.147 10.90.90.142}, :primary => true
+role :app,  "10.90.90.142"#"10.90.90.109"
+role :web, "10.90.90.142"
+role :db, "10.90.90.142", :primary => true
 set :use_sudo, false
+=begin
+task :production do
+	server "10.90.90.147", :app, :web, :db, :primary => true
+	set :deploy_to, "/home/nyros/cap_app"
+	set :user, "nyros" 
+	set :password, "12345678"
+end
+
+task :staging do
+	server "10.90.90.142", :app, :web, :db, :primary => true
+	set :deploy_to, "/home/nyros/cap_app"
+	set :user, "nyros" 
+	set :password, "12345678"
+end
+=end
+
 #set :rake,           "rake"
 #  set :rails_env,      "production"
 #  set :migrate_env,    ""
@@ -42,8 +58,32 @@ set :rvm_type, :user
 #set :rvm_path, "/usr/local/rvm"
 set :rvm_install_with_sudo, true
 
+after "deploy", "deploy:bundle_gems"
+after "deploy:bundle_gems", "deploy:start"
 
 
+ namespace :deploy do
+   task :bundle_gems do
+   	 run "cd #{deploy_to}/current && bundle install"
+   end
+   task :start do 
+   		on roles(:app) do
+        within release_path do
+          with rails_env: fetch(:rails_env) do
+	set :app_port, ask("Port", nil)
+	execute :bundle, "exec thin start -p #{fetch(:app_port)} -d -e RAILS_ENV=#{fetch(:rails_env)}"
+        #execute :bundle, "exec rails s -p 2003 -d -e RAILS_ENV=#{fetch(:rails_env)}"
+          end
+        end
+      end
+   end
+   task :stop do ; end
+   task :restart, :roles => :app, :except => { :no_release => true } do
+     run "touch #{File.join(current_path,'tmp','restart.txt')}"
+   end
+
+
+ end
 
 
 

@@ -33,6 +33,8 @@ gem 'capistrano-ext'
 
 gem 'net-ssh', '~>2.7.0'
 
+gem 'thin'
+
 # Use ActiveModel has_secure_password
 # gem 'bcrypt', '~> 3.1.7'
 
