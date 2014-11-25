@@ -58,24 +58,32 @@ set :rvm_type, :user
 #set :rvm_path, "/usr/local/rvm"
 set :rvm_install_with_sudo, true
 
+set :comment_name, "ask('comment please', nil)"
+
 after "deploy", "deploy:bundle_gems"
-after "deploy:bundle_gems", "deploy:start"
+#after "deploy:pushing_to_git", "deploy:bundle_gems"
+after "deploy:bundle_gems", "deploy:migrate_db"
+after "deploy:migrate_db", "deploy:start"
 
 
  namespace :deploy do
+ 	task :pushing_to_git do
+ 		
+ 		run " git status && git add . %% git commit -m 'scaffold added and deploy modified'"
+ 		run "git push"
+ 	end
+
    task :bundle_gems do
    	 run "cd #{deploy_to}/current && bundle install"
    end
+
+   task :migrate_db do
+   	 run "cd #{deploy_to}/current && rake db:migrate"
+   end
    task :start do 
-   		on roles(:app) do
-        within release_path do
-          with rails_env: fetch(:rails_env) do
-	set :app_port, ask("Port", nil)
-	execute :bundle, "exec thin start -p #{fetch(:app_port)} -d -e RAILS_ENV=#{fetch(:rails_env)}"
-        #execute :bundle, "exec rails s -p 2003 -d -e RAILS_ENV=#{fetch(:rails_env)}"
-          end
-        end
-      end
+	#set :app_port, ask("Port", nil)
+	#execute :bundle, "exec thin start -p #{fetch(:app_port)} -d -e RAILS_ENV=#{fetch(:rails_env)}"
+    run "cd #{deploy_to}/current && exec rails s -p 2003 -d "
    end
    task :stop do ; end
    task :restart, :roles => :app, :except => { :no_release => true } do
